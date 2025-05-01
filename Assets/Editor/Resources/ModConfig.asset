@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 615501dbe4f3fe94fbf4b564abb10237, type: 3}
+  m_Name: ModConfig
+  m_EditorClassIdentifier: 
+  id: literalMaze
+  title: Literal Maze
+  author: Blananas2
+  description: 'Sometimes, the best way to get an idea out of your head is to dive
+    deep into it.
+
+
+    Module by Blananas2
+
+    Other credits go here
+
+
+    Module ID: literalMaze
+
+    The manual can be found here: https://ktane.timwi.de/HTML/Literal%20Maze.html'
+  version: 
+  outputFolder: build
+  previewImage: {fileID: 0}

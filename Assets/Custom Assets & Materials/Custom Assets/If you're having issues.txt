@@ -1,0 +1,5 @@
+If the files in this folder appear as papers and not the models,
+install Blender on your computer.
+
+Download Blender here:
+https://www.blender.org/

@@ -1,0 +1,8 @@
+This folder has the colors for additive coloring:
+Black, Blue, Green, Cyan, Red, Magenta, Yellow, White
+
+If you would like different/nicer colors,
+copy one of the mats, rename it, then 
+use the color picker or look here:
+https://en.wikipedia.org/wiki/List_of_colors_(compact)
+https://en.wikipedia.org/wiki/Web_colors#X11_color_names
