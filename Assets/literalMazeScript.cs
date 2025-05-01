@@ -6,47 +6,54 @@ using System.Text.RegularExpressions;
 using UnityEngine;
 using KModkit;
 
-public class templateScript : MonoBehaviour {
+public class literalMazeScript : MonoBehaviour {
 
-    public KMBombInfo Bomb;
     public KMAudio Audio;
+
+    public KMSelectable[] Grid;
+    public TextMesh[] Letters;
+    public SpriteRenderer[] SpriteSlots;
+    public Sprite[] WallSprites;
+
+    private MazeGenerator mazeGenerator;
+    string mazeString;
 
     //Logging
     static int moduleIdCounter = 1;
     int moduleId;
-    private bool moduleSolved;
 
     void Awake () {
         moduleId = moduleIdCounter++;
-        /*
-        foreach (KMSelectable object in keypad) {
-            object.OnInteract += delegate () { keypadPress(object); return false; };
+
+        foreach (KMSelectable Cell in Grid) {
+            Cell.OnInteract += delegate () { CellPress(Cell); return false; };
         }
-        */
-
-        //button.OnInteract += delegate () { buttonPress(); return false; };
-
     }
 
-    // Use this for initialization
     void Start () {
-
+        mazeGenerator = new MazeGenerator(4);
+        //tryagain goes here
+        mazeString = mazeGenerator.GenerateMaze();
+        LogMaze();
     }
 
-    // Update is called once per frame
-    void Update () {
-
+    void CellPress(KMSelectable Cell) {
+        for (int Q = 0; Q < Grid.Length; Q++) {
+            if (Grid[Q] == Cell) {
+                Debug.Log(Q);
+            }
+        }
     }
 
-    /*
-    void keypadPress(KMSelectable object) {
-        
+     private void LogMaze()
+    {
+        var maze = new string[9];
+        for (int i = 0; i < maze.Length; i++)
+            maze[i] = mazeString.Substring(i * 9, 9);
+        Debug.Log(maze.Join(","));
+        /*
+        for (int i = 0; i < maze.Length; i++)
+            Debug.LogFormat("[Literal Maze #{0}] {1}", moduleId, maze[i]);
+        */
     }
-    */
-
-    /*
-    void buttonPress() {
-
-    }
-    */
 }
