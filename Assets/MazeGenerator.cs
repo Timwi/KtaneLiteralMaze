@@ -1,5 +1,5 @@
+using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 using Rnd = UnityEngine.Random;
 
 public class MazeGenerator
@@ -11,6 +11,50 @@ public class MazeGenerator
     }
     private bool[][] _visited;
     private char[] _charArr;
+
+    private static readonly int[] cellPositions = { 10, 12, 14, 16, 28, 30, 32, 34, 46, 48, 50, 52, 64, 66, 68, 70 };
+    private static readonly int[] wallVectors = { -9, 1, 9, -1 };
+
+    public static string GenerateEncodedMaze()
+    {
+        var mazeGenerator = new MazeGenerator(4);
+        tryagain:
+        var mazeString = mazeGenerator.GenerateMaze();
+        int deadEnds = 0, attempts = 0;
+        var cellWalls = new List<string>();
+        var distinctWalls = new List<string>();
+        var letters = "";
+        for (int p = 0; p < 16; p++)
+        {
+            string theseWalls = "";
+            for (int v = 0; v < 4; v++)
+            {
+                if (mazeString[cellPositions[p] + wallVectors[v]].ToString() == "█")
+                {
+                    theseWalls += "NESW"[v];
+                }
+            }
+            if (theseWalls.Length == 3) { deadEnds++; }
+            cellWalls.Add(theseWalls);
+            if (!distinctWalls.Any(a => a == theseWalls))
+            {
+                distinctWalls.Add(theseWalls);
+                letters += (char) ('a' + distinctWalls.Count - 1);
+            }
+            else
+            {
+                letters += (char) ('a' + distinctWalls.IndexOf(theseWalls));
+            }
+        }
+        if (deadEnds == 2)
+        {
+            attempts++;
+            cellWalls.Clear();
+            distinctWalls.Clear();
+            goto tryagain;
+        }
+        return letters;
+    }
 
     public string GenerateMaze()
     {
@@ -24,7 +68,7 @@ public class MazeGenerator
         var x = Rnd.Range(0, _size);
         var y = Rnd.Range(0, _size);
         Generate(x, y);
-        return _charArr.Join("");
+        return new string(_charArr);
     }
 
     private void Generate(int x, int y)
