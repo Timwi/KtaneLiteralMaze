@@ -16,8 +16,11 @@ public class literalMazeScript : MonoBehaviour
     private readonly List<string> cellWalls = new List<string>();
     private readonly List<string> distinctWalls = new List<string>();
 
-    private string mazeString;  // 16 lower-case letters (a, b, etc.)
-    private int[] solution;              // tile number for each letter (starting with a)
+    private string mazeString; // 16 lower-case letters (a, b, etc.)
+    private int[] solution; // tile number for each letter (starting with a)
+    bool disambiguatorRequired;
+    int currentWall = -1;
+    int placedWalls = 0;
 
     // Logging
     private static int moduleIdCounter = 1;
@@ -70,12 +73,12 @@ public class literalMazeScript : MonoBehaviour
         tryAgain:
         mazeString = MazeGenerator.GenerateEncodedMaze();
         var solutions = Recurse(Enumerable.Range(0, mazeString.Distinct().Count()).Select(_ => new bool?[4]).ToArray(), mazeString).ToArray();
-        if (solutions.Length == 1)
+        disambiguatorRequired = solutions.Length != 1;
+        if (!disambiguatorRequired)
         {
-            // No disambiguating tile needed!
             solution = solutions[0].Select(bs => (bs[0].Value ? 1 : 0) | (bs[1].Value ? 2 : 0) | (bs[2].Value ? 4 : 0) | (bs[3].Value ? 8 : 0)).ToArray();
 
-            // TODO: Set up the module with no disambiguator tile
+            currentWall = solution.PickRandom();
         }
         else
         {
@@ -89,16 +92,24 @@ public class literalMazeScript : MonoBehaviour
             var applicableSolution = solutions.Single(s => s.Any(t => t.SequenceEqual(tileArrays[disambiguator])));
             solution = applicableSolution.Select(bs => (bs[0].Value ? 1 : 0) | (bs[1].Value ? 2 : 0) | (bs[2].Value ? 4 : 0) | (bs[3].Value ? 8 : 0)).ToArray();
 
-            // TODO: Set up the module with disambiguator tile
+            currentWall = disambiguator;
         }
 
-        // TODO: check if 2 deadends
+        SpriteSlots[16].sprite = WallSprites[currentWall];
+
+        // TODO: check if 2 deadends, what we have here doesn't work since it doesn't take into account the number of occurances of each letter in the maze.
         var deadends = new[] { 7, 11, 13, 14 };
         if (solution.Count(deadends.Contains) == 2)
             goto tryAgain;
 
-        Debug.LogFormat("[Literal Maze #{0}] Maze: {1}", moduleId, mazeString);
-        Debug.LogFormat("[Literal Maze #{0}] Tiles: {1}", moduleId, solution.Join(","));
+        //TODO: implement algorithm which attempts to put as many words as possible into the rows of the grid, update the below loop to update the TextMeshes accordingly
+
+        for (int v = 0; v < 16; v++) {
+            Letters[v].text = mazeString[v].ToString();
+        }
+
+        Debug.LogFormat("<Literal Maze #{0}> Simplified maze: {1} / Disambiguator {2}", moduleId, mazeString, disambiguatorRequired);
+        Debug.LogFormat("<Literal Maze #{0}> Tiles: {1}", moduleId, solution.Join(","));
     }
 
     void CellPress(KMSelectable Cell)
