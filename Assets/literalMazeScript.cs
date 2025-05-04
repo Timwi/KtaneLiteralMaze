@@ -253,8 +253,6 @@ public class literalMazeScript : MonoBehaviour
 
             for (var i = 0; i < 16; i++)
             {
-                Debug.LogFormat("♦ {0}, p={1}/{2}, ws={3}/{4} │ {5}", SpriteSlots.Length, placedTiles.Length, mazeString[i] - 'a', WallSprites.Length, solution[mazeString[i] - 'a'], mazeString.Length);
-
                 SpriteSlots[i].sprite = placedTiles[mazeString[i] - 'a'] ? WallSprites[solution[mazeString[i] - 'a']] : null;
                 Letters[i].text = placedTiles[mazeString[i] - 'a'] ? "" : cleartext[mazeString[i] - 'a'].ToString();
             }
