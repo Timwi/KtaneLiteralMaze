@@ -44,10 +44,6 @@ public class literalMazeScript : MonoBehaviour
     public SpriteRenderer[] SpriteSlots;
     public Sprite[] WallSprites;
 
-    private MazeGenerator mazeGenerator;
-    private readonly List<string> cellWalls = new List<string>();
-    private readonly List<string> distinctWalls = new List<string>();
-
     private string mazeString; // 16 lower-case cipher letters (a, b, etc.)
     private int[] solution; // tile number, indexed by cipher letter
     private char[] cleartext;   // cleartext letters (uppercase) indexed by cipher letter
