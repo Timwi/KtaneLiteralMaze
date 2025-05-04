@@ -13,19 +13,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: literalMaze
   title: Literal Maze
-  author: Blananas2
+  author: Blananas2, Timwi
   description: 'Sometimes, the best way to get an idea out of your head is to dive
     deep into it.
 
 
-    Module by Blananas2
+    Model and idea by Blananas2
 
-    Other credits go here
+    Implementation by Timwi
 
 
     Module ID: literalMaze
 
     The manual can be found here: https://ktane.timwi.de/HTML/Literal%20Maze.html'
-  version: 
+  version: 1.0
   outputFolder: build
   previewImage: {fileID: 0}
