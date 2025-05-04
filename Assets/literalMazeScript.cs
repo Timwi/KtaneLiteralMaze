@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using LiteralMaze;
 using UnityEngine;
+using UnityEngine.UI;
 using Rnd = UnityEngine.Random;
 
 public class literalMazeScript : MonoBehaviour
@@ -41,7 +42,7 @@ public class literalMazeScript : MonoBehaviour
     public KMAudio Audio;
     public KMBombModule Module;
     public KMSelectable[] Grid;
-    public TextMesh[] Letters;
+    public Text TemplateLetter;
     public SpriteRenderer[] SpriteSlots;
     public Sprite[] WallSprites;
 
@@ -51,6 +52,10 @@ public class literalMazeScript : MonoBehaviour
     private int currentTile = -1;   // tile number the user needs to click on
     private bool[] placedTiles;  // indexed by cipher letter
 
+    private List<Text> allLetters = new List<Text>();
+    private const float GRID_PHYSICAL_WIDTH = 3f;
+    private const float GRID_LETTER_SIZE = 0.02f;
+
     enum DisplayState { Letter, LetterAndWalls, Walls }
     private DisplayState[] displayStates = new DisplayState[16];
 
@@ -58,6 +63,7 @@ public class literalMazeScript : MonoBehaviour
     private static int moduleIdCounter = 1;
     private int moduleId;
     private bool moduleSolved;
+    private bool cannotPress = true;
 
     void Awake()
     {
@@ -211,7 +217,15 @@ public class literalMazeScript : MonoBehaviour
         }
 
         for (int v = 0; v < 16; v++)
-            Letters[v].text = preferredSolution[v / 4][v % 4].ToString();
+        {
+            var newLetter = Instantiate(TemplateLetter, TemplateLetter.transform.parent);
+            newLetter.transform.localPosition = new Vector3(Mathf.Lerp(-GRID_PHYSICAL_WIDTH, GRID_PHYSICAL_WIDTH, (v % 4) / 3f), Mathf.Lerp(GRID_PHYSICAL_WIDTH, -GRID_PHYSICAL_WIDTH, (v / 4) / 3f));
+            newLetter.text = preferredSolution[v / 4][v % 4].ToString();
+            newLetter.transform.localScale = Vector3.zero;
+            allLetters.Add(newLetter);
+        }
+
+        TemplateLetter.gameObject.SetActive(false);
 
         SpriteSlots[16].sprite = WallSprites[currentTile];
         placedTiles = new bool[cleartext.Length];
@@ -219,46 +233,85 @@ public class literalMazeScript : MonoBehaviour
         Debug.LogFormat("[Literal Maze #{0}] Letters on module: {1}", moduleId, preferredSolution.Join(" "));
         Debug.LogFormat("<Literal Maze #{0}> Simplified maze: {1} / Disambiguator: {2}", moduleId, mazeString, disambiguatorRequired);
         Debug.LogFormat("[Literal Maze #{0}] Tiles: {1}", moduleId, solution.Join(","));
+
+        Module.OnActivate += Activate;
+    }
+
+    private void Activate()
+    {
+        StartCoroutine(RunIntroAnim());
+    }
+
+    private IEnumerator RunIntroAnim(float duration = 0.5f, float intensity = 0.5f)
+    {
+        var initPositions = new List<Vector3>();
+        for (int i = 0; i < 16; i++)
+            initPositions.Add(allLetters[i].transform.localPosition);
+
+        float timer = 0;
+        while (timer < duration)
+        {
+            for (int i = 0; i < 16; i++)
+            {
+                allLetters[i].transform.localScale = Vector3.one * Easing.OutSine(timer, 0, GRID_LETTER_SIZE, duration);
+                allLetters[i].color = new Color(1, 1, 1, Mathf.Lerp(0, 1, timer / duration));
+
+                allLetters[i].transform.localPosition = new Vector3((Rnd.Range(-GRID_PHYSICAL_WIDTH, GRID_PHYSICAL_WIDTH) * (duration - timer) * intensity) + initPositions[i].x,
+                    (Rnd.Range(GRID_PHYSICAL_WIDTH, -GRID_PHYSICAL_WIDTH) * (duration - timer) * intensity) + initPositions[i].y, 0);
+            }
+            yield return null;
+            timer += Time.deltaTime;
+        }
+        for (int i = 0; i < 16; i++)
+        {
+            allLetters[i].transform.localScale = Vector3.one * GRID_LETTER_SIZE;
+            allLetters[i].color = Color.white;
+
+            allLetters[i].transform.localPosition = initPositions[i];
+        }
+        cannotPress = false;
     }
 
     private KMSelectable.OnInteractHandler CellPress(int cell)
     {
         return delegate
         {
-            if (placedTiles[mazeString[cell] - 'a'])
-                return false;
-
-            if (solution[mazeString[cell] - 'a'] != currentTile)
+            if (!cannotPress)
             {
-                Debug.LogFormat("[Literal Maze #{0}] You clicked on cell {1} which has tile {2}, but we were looking for tile {3}. Strike!", moduleId, cell, solution[mazeString[cell] - 'a'], currentTile);
-                Module.HandleStrike();
-                return false;
-            }
+                if (placedTiles[mazeString[cell] - 'a'])
+                    return false;
 
-            Debug.LogFormat("[Literal Maze #{0}] Cell {1} placed correctly with tile {2}.", moduleId, cell, currentTile);
-            placedTiles[mazeString[cell] - 'a'] = true;
+                if (solution[mazeString[cell] - 'a'] != currentTile)
+                {
+                    Debug.LogFormat("[Literal Maze #{0}] You clicked on cell {1} which has tile {2}, but we were looking for tile {3}. Strike!", moduleId, cell, solution[mazeString[cell] - 'a'], currentTile);
+                    Module.HandleStrike();
+                    return false;
+                }
 
-            var ltrs = Enumerable.Range(0, placedTiles.Length).Where(ix => !placedTiles[ix]).ToArray();
-            if (ltrs.Length > 0)
-            {
-                var ltr = ltrs.PickRandom();
-                currentTile = solution[ltr];
-                SpriteSlots[16].sprite = WallSprites[currentTile];
-            }
-            else
-            {
-                Debug.LogFormat("[Literal Maze #{0}] Module solved!", moduleId);
-                Module.HandlePass();
-                moduleSolved = true;
-                SpriteSlots[16].sprite = null;
-            }
+                Debug.LogFormat("[Literal Maze #{0}] Cell {1} placed correctly with tile {2}.", moduleId, cell, currentTile);
+                placedTiles[mazeString[cell] - 'a'] = true;
 
-            for (var i = 0; i < 16; i++)
-            {
-                SpriteSlots[i].sprite = placedTiles[mazeString[i] - 'a'] ? WallSprites[solution[mazeString[i] - 'a']] : null;
-                SetDisplayState(i, moduleSolved ? DisplayState.Walls : placedTiles[mazeString[i] - 'a'] ? DisplayState.LetterAndWalls : DisplayState.Letter);
-            }
+                var ltrs = Enumerable.Range(0, placedTiles.Length).Where(ix => !placedTiles[ix]).ToArray();
+                if (ltrs.Length > 0)
+                {
+                    var ltr = ltrs.PickRandom();
+                    currentTile = solution[ltr];
+                    SpriteSlots[16].sprite = WallSprites[currentTile];
+                }
+                else
+                {
+                    Debug.LogFormat("[Literal Maze #{0}] Module solved!", moduleId);
+                    Module.HandlePass();
+                    moduleSolved = true;
+                    SpriteSlots[16].sprite = null;
+                }
 
+                for (var i = 0; i < 16; i++)
+                {
+                    SpriteSlots[i].sprite = placedTiles[mazeString[i] - 'a'] ? WallSprites[solution[mazeString[i] - 'a']] : null;
+                    SetDisplayState(i, moduleSolved ? DisplayState.Walls : placedTiles[mazeString[i] - 'a'] ? DisplayState.LetterAndWalls : DisplayState.Letter);
+                }
+            }
             return false;
         };
     }
@@ -274,17 +327,17 @@ public class literalMazeScript : MonoBehaviour
                 if (newState == DisplayState.LetterAndWalls)
                 {
                     StartCoroutine(AnimateItem(SpriteSlots[cell].transform, 0, 1.56f));
-                    StartCoroutine(AnimateItem(Letters[cell].transform, .08f, .04f));
+                    StartCoroutine(AnimateItem(allLetters[cell].transform, .08f, .04f));
                 }
                 else if (newState == DisplayState.Walls)
                 {
                     StartCoroutine(AnimateItem(SpriteSlots[cell].transform, 0, 1.56f));
-                    StartCoroutine(AnimateItem(Letters[cell].transform, .08f, 0));
+                    StartCoroutine(AnimateItem(allLetters[cell].transform, .08f, 0));
                 }
                 break;
 
             case DisplayState.LetterAndWalls:
-                StartCoroutine(AnimateItem(Letters[cell].transform, .04f, 0));
+                StartCoroutine(AnimateItem(allLetters[cell].transform, .04f, 0));
                 break;
 
             case DisplayState.Walls:
