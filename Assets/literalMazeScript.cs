@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using LiteralMaze;
@@ -50,9 +51,13 @@ public class literalMazeScript : MonoBehaviour
     private int currentTile = -1;   // tile number the user needs to click on
     private bool[] placedTiles;  // indexed by cipher letter
 
+    enum DisplayState { Letter, LetterAndWalls, Walls }
+    private DisplayState[] displayStates = new DisplayState[16];
+
     // Logging
     private static int moduleIdCounter = 1;
     private int moduleId;
+    private bool moduleSolved;
 
     void Awake()
     {
@@ -244,16 +249,65 @@ public class literalMazeScript : MonoBehaviour
             {
                 Debug.LogFormat("[Literal Maze #{0}] Module solved!", moduleId);
                 Module.HandlePass();
+                moduleSolved = true;
                 SpriteSlots[16].sprite = null;
             }
 
             for (var i = 0; i < 16; i++)
             {
                 SpriteSlots[i].sprite = placedTiles[mazeString[i] - 'a'] ? WallSprites[solution[mazeString[i] - 'a']] : null;
-                Letters[i].text = placedTiles[mazeString[i] - 'a'] ? "" : cleartext[mazeString[i] - 'a'].ToString();
+                SetDisplayState(i, moduleSolved ? DisplayState.Walls : placedTiles[mazeString[i] - 'a'] ? DisplayState.LetterAndWalls : DisplayState.Letter);
             }
 
             return false;
         };
+    }
+
+    private void SetDisplayState(int cell, DisplayState newState)
+    {
+        if (displayStates[cell] == newState)
+            return;
+
+        switch (displayStates[cell])
+        {
+            case DisplayState.Letter:
+                if (newState == DisplayState.LetterAndWalls)
+                {
+                    StartCoroutine(AnimateItem(SpriteSlots[cell].transform, 0, 1.56f));
+                    StartCoroutine(AnimateItem(Letters[cell].transform, .08f, .04f));
+                }
+                else if (newState == DisplayState.Walls)
+                {
+                    StartCoroutine(AnimateItem(SpriteSlots[cell].transform, 0, 1.56f));
+                    StartCoroutine(AnimateItem(Letters[cell].transform, .08f, 0));
+                }
+                break;
+
+            case DisplayState.LetterAndWalls:
+                StartCoroutine(AnimateItem(Letters[cell].transform, .04f, 0));
+                break;
+
+            case DisplayState.Walls:
+                break;
+        }
+
+        displayStates[cell] = newState;
+    }
+
+    IEnumerator AnimateItem(Transform transform, float prevSize, float newSize)
+    {
+        var elapsed = 0f;
+        const float duration = 1.1f;
+        transform.gameObject.SetActive(true);
+        while (elapsed < duration)
+        {
+            var t = Easing.InOutQuad(elapsed, prevSize, newSize, duration);
+            transform.localScale = new Vector3(t, t, 1);
+            yield return null;
+            elapsed += Time.deltaTime;
+        }
+        transform.localScale = new Vector3(newSize, newSize, 1);
+        if (newSize == 0)
+            transform.gameObject.SetActive(false);
     }
 }
