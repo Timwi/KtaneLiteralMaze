@@ -43,7 +43,9 @@ public class literalMazeScript : MonoBehaviour
     public KMBombModule Module;
     public KMSelectable[] Grid;
     public Text TemplateLetter;
-    public SpriteRenderer[] SpriteSlots;
+    public Image TemplateWall;
+    public Image TemplateStar;
+    public Image TopDisplayRend;
     public Sprite[] WallSprites;
 
     private string mazeString; // 16 lower-case cipher letters (a, b, etc.)
@@ -53,8 +55,13 @@ public class literalMazeScript : MonoBehaviour
     private bool[] placedTiles;  // indexed by cipher letter
 
     private List<Text> allLetters = new List<Text>();
+    private List<Image> allWalls = new List<Image>();
+    private List<Image> allStars = new List<Image>();
     private const float GRID_PHYSICAL_WIDTH = 3f;
     private const float GRID_LETTER_SIZE = 0.02f;
+    private const float GRID_LETTER_SIZE_SMALL = 0.01f;
+    private const float GRID_TILE_SIZE = 1f;
+    private const float GRID_STAR_SIZE = 0.8f;
 
     enum DisplayState { Letter, LetterAndWalls, Walls }
     private DisplayState[] displayStates = new DisplayState[16];
@@ -227,7 +234,28 @@ public class literalMazeScript : MonoBehaviour
 
         TemplateLetter.gameObject.SetActive(false);
 
-        SpriteSlots[16].sprite = WallSprites[currentTile];
+        for (int v = 0; v < 16; v++)
+        {
+            var newWallPiece = Instantiate(TemplateWall, TemplateWall.transform.parent);
+            newWallPiece.transform.localPosition = new Vector3(Mathf.Lerp(-GRID_PHYSICAL_WIDTH, GRID_PHYSICAL_WIDTH, (v % 4) / 3f), Mathf.Lerp(GRID_PHYSICAL_WIDTH, -GRID_PHYSICAL_WIDTH, (v / 4) / 3f));
+            newWallPiece.color = Color.clear;
+            allWalls.Add(newWallPiece);
+        }
+
+        TemplateWall.gameObject.SetActive(false);
+
+        for (int v = 0; v < 16; v++)
+        {
+            var newStarPiece = Instantiate(TemplateStar, TemplateStar.transform.parent);
+            newStarPiece.transform.localPosition = new Vector3(Mathf.Lerp(-GRID_PHYSICAL_WIDTH, GRID_PHYSICAL_WIDTH, (v % 4) / 3f), Mathf.Lerp(GRID_PHYSICAL_WIDTH, -GRID_PHYSICAL_WIDTH, (v / 4) / 3f));
+            newStarPiece.transform.localScale = Vector3.zero;
+            newStarPiece.color = new Color(1, 1, 1, 0.5f);
+            allStars.Add(newStarPiece);
+        }
+
+        TemplateStar.gameObject.SetActive(false);
+
+        TopDisplayRend.sprite = WallSprites[currentTile];
         placedTiles = new bool[cleartext.Length];
 
         Debug.LogFormat("[Literal Maze #{0}] Letters on module: {1}", moduleId, preferredSolution.Join(" "));
@@ -281,6 +309,8 @@ public class literalMazeScript : MonoBehaviour
                 if (placedTiles[mazeString[cell] - 'a'])
                     return false;
 
+                Grid[cell].AddInteractionPunch();
+
                 if (solution[mazeString[cell] - 'a'] != currentTile)
                 {
                     Debug.LogFormat("[Literal Maze #{0}] You clicked on cell {1} which has tile {2}, but we were looking for tile {3}. Strike!", moduleId, cell, solution[mazeString[cell] - 'a'], currentTile);
@@ -296,19 +326,20 @@ public class literalMazeScript : MonoBehaviour
                 {
                     var ltr = ltrs.PickRandom();
                     currentTile = solution[ltr];
-                    SpriteSlots[16].sprite = WallSprites[currentTile];
+                    TopDisplayRend.sprite = WallSprites[currentTile];
                 }
                 else
                 {
                     Debug.LogFormat("[Literal Maze #{0}] Module solved!", moduleId);
                     Module.HandlePass();
                     moduleSolved = true;
-                    SpriteSlots[16].sprite = null;
+                    TopDisplayRend.sprite = WallSprites[16];
+                    TopDisplayRend.color = new Color(1, 1, 1, 0.5f);
                 }
 
                 for (var i = 0; i < 16; i++)
                 {
-                    SpriteSlots[i].sprite = placedTiles[mazeString[i] - 'a'] ? WallSprites[solution[mazeString[i] - 'a']] : null;
+                    allWalls[i].sprite = placedTiles[mazeString[i] - 'a'] ? WallSprites[solution[mazeString[i] - 'a']] : null;
                     SetDisplayState(i, moduleSolved ? DisplayState.Walls : placedTiles[mazeString[i] - 'a'] ? DisplayState.LetterAndWalls : DisplayState.Letter);
                 }
             }
@@ -326,18 +357,21 @@ public class literalMazeScript : MonoBehaviour
             case DisplayState.Letter:
                 if (newState == DisplayState.LetterAndWalls)
                 {
-                    StartCoroutine(AnimateItem(SpriteSlots[cell].transform, 0, 1.56f));
-                    StartCoroutine(AnimateItem(allLetters[cell].transform, .08f, .04f));
+                    StartCoroutine(RevealWalls(allWalls[cell]));
+                    StartCoroutine(SupressText(allLetters[cell]));
                 }
                 else if (newState == DisplayState.Walls)
                 {
-                    StartCoroutine(AnimateItem(SpriteSlots[cell].transform, 0, 1.56f));
-                    StartCoroutine(AnimateItem(allLetters[cell].transform, .08f, 0));
+                    allWalls[cell].color = Color.white;
+                    StartCoroutine(RevealWalls(allWalls[cell]));
+                    StartCoroutine(HideText(allLetters[cell]));
+                    StartCoroutine(RevealStar(allStars[cell]));
                 }
                 break;
 
             case DisplayState.LetterAndWalls:
-                StartCoroutine(AnimateItem(allLetters[cell].transform, .04f, 0));
+                StartCoroutine(HideText(allLetters[cell]));
+                StartCoroutine(RevealStar(allStars[cell]));
                 break;
 
             case DisplayState.Walls:
@@ -347,7 +381,7 @@ public class literalMazeScript : MonoBehaviour
         displayStates[cell] = newState;
     }
 
-    IEnumerator AnimateItem(Transform transform, float prevSize, float newSize)
+    /*IEnumerator AnimateItem(Transform transform, float prevSize, float newSize)
     {
         var elapsed = 0f;
         const float duration = 1.1f;
@@ -362,5 +396,68 @@ public class literalMazeScript : MonoBehaviour
         transform.localScale = new Vector3(newSize, newSize, 1);
         if (newSize == 0)
             transform.gameObject.SetActive(false);
+    }*/
+
+    private IEnumerator RevealWalls(Image target, float duration = 0.5f, float angle = 500f)
+    {
+        target.color = Color.white;
+        target.transform.localScale = Vector3.zero;
+
+        float timer = 0;
+        while (timer < duration)
+        {
+            target.transform.localScale = Vector3.one * Easing.OutSine(timer, 0, GRID_TILE_SIZE, duration);
+            target.transform.localEulerAngles = Vector3.forward * Easing.OutSine(timer, angle, 0, duration);
+            yield return null;
+            timer += Time.deltaTime;
+        }
+
+        target.transform.localScale = Vector3.one * GRID_TILE_SIZE;
+        target.transform.localEulerAngles = Vector3.zero;
+    }
+
+    private IEnumerator SupressText(Text target, float duration = 0.5f)
+    {
+        target.transform.localScale = Vector3.one * GRID_LETTER_SIZE;
+
+        float timer = 0;
+        while (timer < duration)
+        {
+            target.transform.localScale = Vector3.one * Easing.OutExpo(timer, GRID_LETTER_SIZE, GRID_LETTER_SIZE_SMALL, duration);
+            yield return null;
+            timer += Time.deltaTime;
+        }
+
+        target.transform.localScale = Vector3.one * GRID_LETTER_SIZE_SMALL;
+    }
+
+    private IEnumerator HideText(Text target, float duration = 0.5f)
+    {
+        target.transform.localScale = Vector3.one * GRID_LETTER_SIZE_SMALL;
+
+        float timer = 0;
+        while (timer < duration)
+        {
+            target.transform.localScale = Vector3.one * Easing.OutExpo(timer, GRID_LETTER_SIZE_SMALL, 0, duration);
+            yield return null;
+            timer += Time.deltaTime;
+        }
+
+        target.transform.localScale = Vector3.zero;
+    }
+
+    private IEnumerator RevealStar(Image target, float duration = 0.5f)
+    {
+        target.transform.localScale = Vector3.zero;
+
+        float timer = 0;
+        while (timer < duration)
+        {
+            target.transform.localScale = Vector3.one * Easing.OutSine(timer, 0, GRID_STAR_SIZE, duration);
+            yield return null;
+            timer += Time.deltaTime;
+        }
+
+        target.transform.localScale = Vector3.one * GRID_STAR_SIZE;
     }
 }

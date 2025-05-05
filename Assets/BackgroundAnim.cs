@@ -6,7 +6,8 @@ using UnityEngine.UI;
 public class BackgroundAnim : MonoBehaviour
 {
     public KMBombModule Module;
-    public Image BackgroundColour;
+    public Image BackgroundColourBottom;
+    public Image BackgroundColourTop;
     public Image BarsA;
     public Image BarsB;
     public Image BarsC;
@@ -17,7 +18,7 @@ public class BackgroundAnim : MonoBehaviour
         Module.OnActivate += delegate { StartCoroutine(BackgroundAnimRainbow()); StartCoroutine(BackgroundAnimBars()); };
 
         BarsA.transform.localScale = BarsB.transform.localScale = BarsC.transform.localScale = BarsD.transform.localScale = Vector3.zero;
-        BackgroundColour.color = Color.black;
+        BackgroundColourBottom.color = BackgroundColourTop.color = Color.black;
     }
 
     private IEnumerator BackgroundAnimBars(float interval = 10f)
@@ -46,7 +47,7 @@ public class BackgroundAnim : MonoBehaviour
             var g = new[] { timer, 1, 1, 4 - timer, 0, 0 }[Mathf.FloorToInt(timer)] * intensity;
             var b = new[] { 0, 0, timer - 2, 1, 1, 6 - timer }[Mathf.FloorToInt(timer)] * intensity;
 
-            BackgroundColour.color = new Color(r, g, b, 1);
+            BackgroundColourBottom.color = BackgroundColourTop.color = new Color(r, g, b, 1);
             yield return null;
         }
     }
