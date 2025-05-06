@@ -1,0 +1,10 @@
+{
+  "name": "literalMaze-Editor",
+  "references": [
+    "literalMaze"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": []
+}

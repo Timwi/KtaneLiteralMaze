@@ -13,7 +13,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: literalMaze
   title: Literal Maze
-  author: Blananas2, Timwi
+  author: Blananas2, Timwi, GhostSalt
   description: 'Sometimes, the best way to get an idea out of your head is to dive
     deep into it.
 
@@ -21,6 +21,8 @@ MonoBehaviour:
     Model and idea by Blananas2
 
     Implementation by Timwi
+
+    Graphics and sounds by GhostSalt
 
 
     Module ID: literalMaze
