@@ -315,8 +315,11 @@ public class literalMazeScript : MonoBehaviour
                 {
                     Debug.LogFormat("[Literal Maze #{0}] You clicked on cell {1} which has tile {2}, but we were looking for tile {3}. Strike!", moduleId, cell, solution[mazeString[cell] - 'a'], currentTile);
                     Module.HandleStrike();
+                    Audio.PlaySoundAtTransform("strike", Grid[cell].transform);
                     return false;
                 }
+
+                Audio.PlaySoundAtTransform("whoosh", Grid[cell].transform);
 
                 Debug.LogFormat("[Literal Maze #{0}] Cell {1} placed correctly with tile {2}.", moduleId, cell, currentTile);
                 placedTiles[mazeString[cell] - 'a'] = true;
@@ -327,6 +330,7 @@ public class literalMazeScript : MonoBehaviour
                     var ltr = ltrs.PickRandom();
                     currentTile = solution[ltr];
                     TopDisplayRend.sprite = WallSprites[currentTile];
+                    Audio.PlaySoundAtTransform("correct", Grid[cell].transform);
                 }
                 else
                 {
@@ -335,6 +339,7 @@ public class literalMazeScript : MonoBehaviour
                     moduleSolved = true;
                     TopDisplayRend.sprite = WallSprites[16];
                     TopDisplayRend.color = new Color(1, 1, 1, 0.5f);
+                    Audio.PlaySoundAtTransform("solve", TemplateLetter.transform);
                 }
 
                 for (var i = 0; i < 16; i++)
