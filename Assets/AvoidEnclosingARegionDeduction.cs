@@ -17,6 +17,20 @@ namespace LiteralMaze
                 yield return new CellTransition(fromCell - 1, dir: 3);
         }
 
+        public static int FindReachable(bool?[][] known, string maze, int startingPosition)
+        {
+            var visited = new HashSet<int> { startingPosition };
+
+            while (visited.Count < 16)
+            {
+                var discovered = visited.SelectMany(cell => FindReachableCells(cell, known, maze).Select(tup => tup.Cell)).Except(visited).ToArray();
+                if (discovered.Length == 0)
+                    break;
+                visited.UnionWith(discovered);
+            }
+            return visited.Count;
+        }
+
         public override DeductionInfo? Deduce(bool?[][] known, string maze)
         {
             for (var ltr = 0; ltr < known.Length; ltr++)
@@ -24,17 +38,9 @@ namespace LiteralMaze
                     if (known[ltr][dir] == null)
                     {
                         known[ltr][dir] = true;
-                        var visited = new HashSet<int> { maze.IndexOf((char) (ltr + 'a')) };
-
-                        while (visited.Count < 16)
-                        {
-                            var discovered = visited.SelectMany(cell => FindReachableCells(cell, known, maze).Select(tup => tup.Cell)).Except(visited).ToArray();
-                            if (discovered.Length == 0)
-                                break;
-                            visited.UnionWith(discovered);
-                        }
+                        var count = FindReachable(known, maze, maze.IndexOf((char) (ltr + 'a')));
                         known[ltr][dir] = null;
-                        if (visited.Count != 16)
+                        if (count != 16)
                             return new DeductionInfo(ltr, dir, false);
                     }
             return null;

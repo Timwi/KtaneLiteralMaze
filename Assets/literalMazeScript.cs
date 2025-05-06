@@ -99,6 +99,26 @@ public class literalMazeScript : MonoBehaviour
         var firstUnsolvedLtr = Array.FindIndex(known, walls => walls.Any(w => w == null));
         if (firstUnsolvedLtr == -1)
         {
+            // Verify: Different letters correspond to different wall configurations
+            for (var i = 0; i < known.Length; i++)
+                for (var j = i + 1; j < known.Length; j++)
+                    if (known[i].SequenceEqual(known[j]))
+                        yield break;
+
+            // Verify: There is a wall around the outer edge
+            for (var cell = 0; cell < 16; cell++)
+                if ((cell / 4 == 0 && known[maze[cell] - 'a'][0] == false) || (cell % 4 == 3 && known[maze[cell] - 'a'][1] == false) || (cell / 4 == 3 && known[maze[cell] - 'a'][2] == false) || (cell % 4 == 0 && known[maze[cell] - 'a'][3] == false))
+                    yield break;
+
+            // Verify: Adjacent cells agree on whether there is a wall between them or not
+            for (var cell = 0; cell < 16; cell++)
+                if ((cell % 4 != 0 && known[maze[cell - 1] - 'a'][1] != known[maze[cell] - 'a'][3]) || (cell / 4 != 0 && known[maze[cell - 4] - 'a'][2] != known[maze[cell] - 'a'][0]))
+                    yield break;
+
+            // Verify: The resulting structure is a maze in which every location is reachable from every other (no isolated regions)
+            if (AvoidEnclosingARegionDeduction.FindReachable(known, maze, 0) != 16)
+                yield break;
+
             yield return known;
             yield break;
         }
@@ -260,7 +280,8 @@ public class literalMazeScript : MonoBehaviour
 
         Debug.LogFormat("[Literal Maze #{0}] Letters on module: {1}", moduleId, preferredSolution.Join(" "));
         Debug.LogFormat("<Literal Maze #{0}> Simplified maze: {1} / Disambiguator: {2}", moduleId, mazeString, disambiguatorRequired);
-        Debug.LogFormat("[Literal Maze #{0}] Tiles: {1}", moduleId, solution.Join(","));
+        Debug.LogFormat("[Literal Maze #{0}] Tiles: {1}", moduleId, mazeString.Select(ch => solution[ch - 'a']).Join(","));
+        Debug.LogFormat("[Literal Maze #{0}] Initial tile: tile {1}", moduleId, currentTile);
 
         Module.OnActivate += Activate;
     }
