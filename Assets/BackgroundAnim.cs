@@ -21,27 +21,32 @@ public class BackgroundAnim : MonoBehaviour
         BackgroundColourBottom.color = BackgroundColourTop.color = Color.black;
     }
 
-    private IEnumerator BackgroundAnimBars(float interval = 10f)
+    private IEnumerator BackgroundAnimBars()
     {
+        var interval = Random.Range(9f, 11f);
+        var offset = Random.Range(0f, 1f);
         BarsA.transform.localScale = BarsB.transform.localScale = BarsC.transform.localScale = BarsD.transform.localScale = Vector3.one;
 
         while (true)
         {
-            BarsA.transform.localEulerAngles = Vector3.forward * Mathf.Lerp(0, 360, (Time.time / interval) % 1);
-            BarsB.transform.localEulerAngles = Vector3.forward * Mathf.Lerp(360, 0, (Time.time / interval) % 1);
-            BarsC.transform.localEulerAngles = Vector3.forward * Mathf.Lerp(0, 360, ((Time.time / interval) + 0.25f) % 1);
-            BarsD.transform.localEulerAngles = Vector3.forward * Mathf.Lerp(360, 0, ((Time.time / interval) + 0.25f) % 1);
+            BarsA.transform.localEulerAngles = Vector3.forward * Mathf.Lerp(0, 360, (Time.time / interval + offset) % 1);
+            BarsB.transform.localEulerAngles = Vector3.forward * Mathf.Lerp(360, 0, (Time.time / interval + offset) % 1);
+            BarsC.transform.localEulerAngles = Vector3.forward * Mathf.Lerp(0, 360, (Time.time / interval + offset + 0.25f) % 1);
+            BarsD.transform.localEulerAngles = Vector3.forward * Mathf.Lerp(360, 0, (Time.time / interval + offset + 0.25f) % 1);
             yield return null;
         }
     }
 
-    private IEnumerator BackgroundAnimRainbow(float interval = 4f, float intensity = 0.25f)
+    private IEnumerator BackgroundAnimRainbow()
     {
-        interval *= Mathf.PI;   // To make things a little more "random".
+        const float intensity = 0.25f;
+
+        var interval = Random.Range(10f, 14f);
+        var offset = Random.Range(0f, 6f);
 
         while (true)
         {
-            var timer = ((Time.time * 6) / interval) % 6;
+            var timer = ((Time.time * 6) / interval + offset) % 6;
 
             var r = new[] { 1, 2 - timer, 0, 0, timer - 4, 1 }[Mathf.FloorToInt(timer)] * intensity;
             var g = new[] { timer, 1, 1, 4 - timer, 0, 0 }[Mathf.FloorToInt(timer)] * intensity;

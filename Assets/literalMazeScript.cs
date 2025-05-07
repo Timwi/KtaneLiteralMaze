@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using LiteralMaze;
 using UnityEngine;
 using UnityEngine.UI;
@@ -304,7 +305,6 @@ public class literalMazeScript : MonoBehaviour
             {
                 allLetters[i].transform.localScale = Vector3.one * Easing.OutSine(timer, 0, GRID_LETTER_SIZE, duration);
                 allLetters[i].color = new Color(1, 1, 1, Mathf.Lerp(0, 1, timer / duration));
-
                 allLetters[i].transform.localPosition = new Vector3((Rnd.Range(-GRID_PHYSICAL_WIDTH, GRID_PHYSICAL_WIDTH) * (duration - timer) * intensity) + initPositions[i].x,
                     (Rnd.Range(GRID_PHYSICAL_WIDTH, -GRID_PHYSICAL_WIDTH) * (duration - timer) * intensity) + initPositions[i].y, 0);
             }
@@ -315,7 +315,6 @@ public class literalMazeScript : MonoBehaviour
         {
             allLetters[i].transform.localScale = Vector3.one * GRID_LETTER_SIZE;
             allLetters[i].color = Color.white;
-
             allLetters[i].transform.localPosition = initPositions[i];
         }
         cannotPress = false;
@@ -407,23 +406,6 @@ public class literalMazeScript : MonoBehaviour
         displayStates[cell] = newState;
     }
 
-    /*IEnumerator AnimateItem(Transform transform, float prevSize, float newSize)
-    {
-        var elapsed = 0f;
-        const float duration = 1.1f;
-        transform.gameObject.SetActive(true);
-        while (elapsed < duration)
-        {
-            var t = Easing.InOutQuad(elapsed, prevSize, newSize, duration);
-            transform.localScale = new Vector3(t, t, 1);
-            yield return null;
-            elapsed += Time.deltaTime;
-        }
-        transform.localScale = new Vector3(newSize, newSize, 1);
-        if (newSize == 0)
-            transform.gameObject.SetActive(false);
-    }*/
-
     private IEnumerator RevealWalls(Image target, float duration = 0.5f, float angle = 500f)
     {
         target.color = Color.white;
@@ -485,5 +467,32 @@ public class literalMazeScript : MonoBehaviour
         }
 
         target.transform.localScale = Vector3.one * GRID_STAR_SIZE;
+    }
+
+#pragma warning disable 414
+    private readonly string TwitchHelpMessage = "!{0} a1 [press top-left square] | Coordinates are A–D for columns, 1–4 for rows";
+#pragma warning restore 414
+
+    private KMSelectable[] ProcessTwitchCommand(string command)
+    {
+        var m = Regex.Match(command, @"^\s*(?:press\s+)?([a-d])([1-4])\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        if (!m.Success)
+            return null;
+
+        var col = char.ToUpperInvariant(m.Groups[1].Value[0]) - 'A';
+        var row = m.Groups[2].Value[0] - '1';
+        var cell = col + 4 * row;
+        return new[] { Grid[cell] };
+    }
+
+    private IEnumerator TwitchHandleForcedSolve()
+    {
+        while (true)
+        {
+            Grid[mazeString.IndexOf((char) ('a' + Array.IndexOf(solution, currentTile)))].OnInteract();
+            if (moduleSolved)
+                break;
+            yield return new WaitForSeconds(.5f);
+        }
     }
 }
