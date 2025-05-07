@@ -194,9 +194,9 @@ public class literalMazeScript : MonoBehaviour
             currentTile = disambiguator;
         }
 
-        // TODO: check if 2 deadends, what we have here doesn't work since it doesn't take into account the number of occurances of each letter in the maze.
+        // Check if 2 deadends, because then it’s just a hallway and not a maze
         var deadends = new[] { 7, 11, 13, 14 };
-        if (solution.Count(deadends.Contains) == 2)
+        if (mazeString.Count(ltr => deadends.Contains(solution[ltr - 'a'])) == 2)
             goto tryAgain;
 
         var rows = Enumerable.Range(0, 4).Select(r => mazeString.Substring(4 * r, 4)).ToArray();
